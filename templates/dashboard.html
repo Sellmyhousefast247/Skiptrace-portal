@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid">
+  <article class="card">
+    <h2>Single lookup</h2>
+    <p class="muted">Enter what you know. Name plus address tends to give the best match rate.</p>
+    <form id="single-form" class="form">
+      <div class="row">
+        <label>Name<input name="name" placeholder="Jane Doe" autocomplete="off" /></label>
+        <label>Phone<input name="phone" placeholder="(555) 555-1212" autocomplete="off" /></label>
+      </div>
+      <label>Address<input name="address" placeholder="123 Main St" autocomplete="off" /></label>
+      <div class="row">
+        <label>City<input name="city" autocomplete="off" /></label>
+        <label class="short">State<input name="state" maxlength="2" autocomplete="off" /></label>
+        <label class="short">ZIP<input name="zip" maxlength="10" autocomplete="off" /></label>
+      </div>
+      <label>Email<input name="email" type="email" autocomplete="off" /></label>
+      <div class="actions">
+        <button type="submit">Run skip trace</button>
+        <button type="reset" class="ghost">Reset</button>
+      </div>
+    </form>
+    <div id="single-result" class="result" hidden></div>
+  </article>
+
+  <article class="card">
+    <h2>Batch upload</h2>
+    <p class="muted">
+      CSV with a header row. Recognized columns: <code>name, address, city, state, zip, phone, email</code>.
+    </p>
+    <form id="batch-form" class="form">
+      <input id="batch-file" type="file" name="file" accept=".csv,text/csv" required />
+      <div class="actions">
+        <button type="submit">Process batch</button>
+      </div>
+    </form>
+    <div id="batch-result" class="result" hidden></div>
+  </article>
+</section>
+
+<section class="card wide">
+  <div class="card-head">
+    <h2>Recent searches</h2>
+    <button id="refresh-history" class="ghost">Refresh</button>
+  </div>
+  <div class="table-wrap">
+    <table id="history-table">
+      <thead>
+        <tr>
+          <th>When</th><th>Source</th><th>Query</th><th>Phones</th><th>Emails</th><th>Conf.</th><th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
