@@ -27,6 +27,8 @@ from flask import (
 )
 
 from providers import lookup
+from scrapers import all_search_urls, ALL as ALL_SCRAPERS
+from scrapers.base import has_cloudscraper
 
 DB_PATH = Path(__file__).parent / "instance" / "skiptrace.db"
 
@@ -131,6 +133,20 @@ def create_app() -> Flask:
             headers={"Content-Disposition": "attachment; filename=skiptrace-history.csv"},
         )
 
+    @app.post("/api/links")
+    def api_links():
+        payload = request.get_json(silent=True) or {}
+        query = _normalize_query(payload)
+        return jsonify({"links": list(all_search_urls(query))})
+
+    @app.get("/api/sources")
+    def api_sources():
+        return jsonify({
+            "sources": [{"name": s.name, "label": s.label, "domain": s.domain}
+                        for s in ALL_SCRAPERS],
+            "cloudscraper": has_cloudscraper(),
+        })
+
     @app.delete("/api/history/<int:row_id>")
     def api_delete(row_id: int):
         db = get_db()
@@ -194,6 +210,12 @@ def _row_to_dict(row: sqlite3.Row) -> dict:
     return d
 
 
+def _email_str(e) -> str:
+    if isinstance(e, dict):
+        return e.get("email", "")
+    return str(e or "")
+
+
 def _rows_to_csv(rows: Iterable[sqlite3.Row]) -> str:
     buf = io.StringIO()
     writer = csv.writer(buf)
@@ -210,7 +232,7 @@ def _rows_to_csv(rows: Iterable[sqlite3.Row]) -> str:
             r["id"], r["created_at"], r["source"], r["name"] or "", r["address"] or "",
             r["city"] or "", r["state"] or "", r["zip"] or "", r["phone"] or "", r["email"] or "",
             "; ".join(p.get("number", "") for p in result.get("phones", [])),
-            "; ".join(result.get("emails", [])),
+            "; ".join(_email_str(e) for e in result.get("emails", [])),
             "; ".join(a.get("line", "") for a in result.get("addresses", [])),
             result.get("confidence", ""),
         ])

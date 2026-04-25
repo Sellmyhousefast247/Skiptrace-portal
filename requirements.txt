@@ -1,1 +1,9 @@
 Flask==3.0.3
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+phonenumbers==8.13.49
+# Optional: solves most Cloudflare IUAM challenges so TruePeopleSearch /
+# FastPeopleSearch responses come back as plain HTML. The app falls back to
+# requests if cloudscraper isn't installed.
+cloudscraper==1.2.71
