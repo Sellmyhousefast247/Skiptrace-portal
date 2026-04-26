@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skiptrace Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">ST</span>
+      <span>Skiptrace Portal</span>
+    </div>
+    <nav>
+      <a href="#search">Search</a>
+      <a href="#batch">Batch</a>
+      <a href="#history">History</a>
+      <a href="#" id="export-link">Export CSV</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="search" class="grid">
+      <article class="card">
+        <h2>Single lookup</h2>
+        <p class="muted">
+          Enter what you know. We open every free skip-trace site pre-filled in
+          one click, plus enrich phone &amp; address with libphonenumber and the
+          US Census Geocoder.
+        </p>
+        <form id="single-form" class="form" autocomplete="off">
+          <div class="row">
+            <label>Name<input name="name" placeholder="Jane Doe" /></label>
+            <label>Phone<input name="phone" placeholder="(555) 555-1212" /></label>
+          </div>
+          <label>Address<input name="address" placeholder="123 Main St" /></label>
+          <div class="row">
+            <label>City<input name="city" /></label>
+            <label class="short">State<input name="state" maxlength="2" /></label>
+            <label class="short">ZIP<input name="zip" maxlength="10" /></label>
+          </div>
+          <label>Email<input name="email" type="email" /></label>
+          <div class="actions">
+            <button type="submit">Generate links &amp; enrich</button>
+            <button type="button" id="open-all" class="ghost">Open all in tabs</button>
+            <button type="reset" class="ghost">Reset</button>
+          </div>
+        </form>
+        <div id="result" class="result" hidden></div>
+      </article>
+
+      <article class="card">
+        <h2>Batch upload</h2>
+        <p class="muted">
+          CSV with a header row. Recognized columns:
+          <code>name, address, city, state, zip, phone, email</code>.
+          We add a column of pre-filled search URLs per site.
+        </p>
+        <form id="batch-form" class="form">
+          <input id="batch-file" type="file" name="file" accept=".csv,text/csv" required />
+          <div class="actions">
+            <button type="submit">Process batch</button>
+            <button type="button" id="batch-export" class="ghost" disabled>Download enriched CSV</button>
+          </div>
+        </form>
+        <div id="batch-result" class="result" hidden></div>
+      </article>
+    </section>
+
+    <section id="history" class="card wide">
+      <div class="card-head">
+        <h2>Recent searches</h2>
+        <div>
+          <button id="clear-history" class="danger">Clear history</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>When</th><th>Query</th><th>Phone enrichment</th><th>Address</th><th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>
+      Static dashboard, no backend. Searches save to your browser's localStorage.
+      Comply with FCRA, GLBA, DPPA, and TCPA before contacting anyone returned.
+    </small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1.11.7/bundle/libphonenumber-max.min.js"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
