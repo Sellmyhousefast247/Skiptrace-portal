@@ -1,0 +1,19 @@
+# Render Blueprint — one-click deploy of the Flask scraper backend.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: skiptrace-portal-backend
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT --timeout 60 app:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: SKIPTRACE_PROVIDER
+        value: live
+      # Allow your GitHub Pages dashboard to call this backend.
+      - key: SKIPTRACE_ALLOWED_ORIGINS
+        value: https://sellmyhousefast247.github.io
