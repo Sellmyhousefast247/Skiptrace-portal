@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -63,11 +64,51 @@ def get_db() -> sqlite3.Connection:
 def create_app() -> Flask:
     app = Flask(__name__)
 
+    # CORS — allow the static dashboard (GitHub Pages) and localhost dev to
+    # call this backend. Override with SKIPTRACE_ALLOWED_ORIGINS=comma,list
+    # or SKIPTRACE_ALLOW_ALL_ORIGINS=1.
+    allow_all = os.environ.get("SKIPTRACE_ALLOW_ALL_ORIGINS") == "1"
+    default_allowed = {
+        "https://sellmyhousefast247.github.io",
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8765",
+        "http://127.0.0.1:8765",
+    }
+    extra = os.environ.get("SKIPTRACE_ALLOWED_ORIGINS", "").strip()
+    if extra:
+        default_allowed.update(o.strip() for o in extra.split(",") if o.strip())
+
+    @app.after_request
+    def add_cors(resp):
+        origin = request.headers.get("Origin", "")
+        if allow_all or origin in default_allowed:
+            resp.headers["Access-Control-Allow-Origin"] = origin or "*"
+            resp.headers["Vary"] = "Origin"
+            resp.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+            resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            resp.headers["Access-Control-Max-Age"] = "86400"
+        return resp
+
+    @app.route("/api/<path:_>", methods=["OPTIONS"])
+    def cors_preflight(_):
+        return ("", 204)
+
     @app.teardown_appcontext
     def close_db(_exc):
         db = g.pop("db", None)
         if db is not None:
             db.close()
+
+    @app.get("/healthz")
+    def healthz():
+        return jsonify({
+            "ok": True,
+            "cloudscraper": has_cloudscraper(),
+            "sources": [s.name for s in ALL_SCRAPERS],
+        })
 
     @app.get("/")
     def dashboard():
@@ -243,4 +284,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    host = os.environ.get("HOST", "127.0.0.1")
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    app.run(host=host, port=port, debug=debug)

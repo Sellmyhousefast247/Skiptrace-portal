@@ -1,103 +1,142 @@
 # Skiptrace Portal
 
-Two ways to use this:
+Real-time skip-trace dashboard with two parts that work together:
 
-1. **Hosted static dashboard** (recommended) — runs in your browser, no install,
-   no backend. Generates one-click search URLs into 15+ free skip-trace sites,
-   enriches phone numbers (libphonenumber) and addresses (US Census Geocoder),
-   batch CSV upload, history in localStorage. Deployed via GitHub Pages.
-2. **Local Flask app** — same idea but with a Python backend that *attempts* to
-   scrape the sites directly. Less reliable (sites block scrapers aggressively)
-   but useful when paired with a residential IP.
+1. **Static dashboard** on GitHub Pages (`docs/`) — the UI you visit.
+2. **Flask backend** deployable in one click to Render (`app.py`, `render.yaml`)
+   — does the actual scraping and returns merged phones, addresses, emails, and
+   relatives that show up inline on the dashboard.
 
-## 1. Hosted dashboard — enable GitHub Pages
+Without the backend, the dashboard runs in **links-only mode**: it generates
+pre-filled URLs into 15+ free people-search sites that you click through
+manually. With the backend, you get phones and relatives **on the dashboard
+itself**.
 
-The static dashboard lives in `docs/`. After this branch is merged (or while
-you're working on it), enable Pages once:
+## Setup (5 minutes, one-time)
 
-1. Go to your repo's **Settings → Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Push to `main` (or run the workflow manually under **Actions → Deploy
-   dashboard to GitHub Pages → Run workflow**).
+### Step 1: Enable GitHub Pages (the dashboard)
 
-The included workflow (`.github/workflows/pages.yml`) auto-deploys
-`docs/` on every push to `main` or this feature branch.
+1. **Settings → Pages**: https://github.com/Sellmyhousefast247/Skiptrace-portal/settings/pages
+2. Under **Source**, select **GitHub Actions**.
+3. Push to `main` (or run the workflow manually). Your dashboard will be live at:
 
-Your dashboard URL will be:
+   **https://sellmyhousefast247.github.io/Skiptrace-portal/**
 
-```
-https://<your-github-username>.github.io/<repo-name>/
-```
+### Step 2: Deploy the backend to Render (free)
 
-For this repo that's:
+1. Click here: **https://render.com/deploy?repo=https://github.com/Sellmyhousefast247/Skiptrace-portal**
+2. Sign in (free, GitHub login works).
+3. Render reads `render.yaml` automatically. Click **Apply**.
+4. Wait ~3 minutes for the first build. You'll get a URL like
+   `https://skiptrace-portal-backend.onrender.com`.
 
-```
-https://sellmyhousefast247.github.io/Skiptrace-portal/
-```
+> **Free tier note:** Render spins the service down after 15 minutes of
+> inactivity. The first lookup after a cold start takes ~30–60 s while it
+> wakes up. Subsequent lookups are fast (5–15 s).
 
-(The exact URL appears at the top of **Settings → Pages** after the first
-successful deployment.)
+### Step 3: Connect them
 
-### What the dashboard does
+1. Open your dashboard.
+2. Click **⚙ Settings** (top right).
+3. Paste the Render URL into **Backend URL** (e.g.
+   `https://skiptrace-portal-backend.onrender.com`).
+4. Click **Test connection** → should say "✓ Connected".
+5. Click **Save**.
 
-- **Single lookup**: enter name / address / phone / email; one click opens
-  every applicable free skip-trace site pre-filled in a new tab. "Open all in
-  tabs" launches them all at once.
-- **Phone enrichment**: libphonenumber gives line type (mobile/landline/voip),
-  region, validity, and E.164 format.
-- **Address enrichment**: US Census Geocoder standardizes the address and
-  gives lat/lon plus a Google Maps link.
-- **Batch CSV**: upload a CSV (header row required), get a table with one
-  column per source containing the pre-filled search URL for that row, plus
-  download an "enriched CSV" with all the URLs as columns.
-- **History**: stored in your browser's localStorage; rerun, delete, export.
+The banner at the top should now read **"✓ Backend connected"**. Run a
+lookup — phones, addresses, and relatives appear inline.
 
-### Sources covered
+## What you see in backend mode
+
+For each lookup the dashboard shows:
+
+- **📞 Phones** — number, line type (mobile/landline/voip), region, validity
+  (libphonenumber), one-tap **Call** and **Text** links, and which sites it
+  came from.
+- **👨‍👩‍👧 Relatives & associates** — clickable; each has a "Look up phones →"
+  button that runs a fresh skip trace on that relative.
+- **🏠 Addresses** — original + Census-standardized + Google Maps link.
+- **✉ Emails**.
+- **Sources panel** (collapsed) — per-site status: `ok`, `blocked`, `no_results`,
+  `error`. Tells you exactly which sites returned data and which ones got
+  blocked, with timing.
+- **Open at source manually** (collapsed) — the same 15 free-site quick-launch
+  links as a fallback.
+
+## Realistic expectations
+
+These free sites actively block scrapers. From a Render datacenter IP, you
+should usually expect:
+
+- ✅ **ThatsThem** — typically returns data.
+- ⚠️ **TruePeopleSearch / Spokeo** — coin flip; cloudscraper helps, but
+  Cloudflare sometimes wins.
+- ❌ **FastPeopleSearch / USPhoneBook** — frequently blocked from datacenter IPs.
+
+When a site is blocked you see it clearly in the Sources panel, and the
+quick-launch link still opens it in your browser as a manual fallback. For
+near-100% coverage you'd need either a paid skip-trace API (BatchSkipTracing,
+REIskip — wire into `providers.py`) or a residential proxy.
+
+## Sources covered
 
 TruePeopleSearch · FastPeopleSearch · ThatsThem · USPhoneBook · Spokeo ·
 Whitepages · Radaris · 411.com · AnyWho · BeenVerified · PeopleFinders ·
 SearchPeopleFREE · Google · Facebook · LinkedIn.
 
-To add a new site, append an object to `SOURCES` in `docs/app.js`:
+(The first four are scraped by the backend; all 15 are quick-launchable from
+the dashboard.)
 
-```js
-{
-  key: "newsite",
-  label: "NewSite",
-  build(q) {
-    if (q.phone) return `https://newsite.com/lookup/${digitsOnly(q.phone)}`;
-    return null;
-  },
-}
-```
+## Local development
 
-## 2. Local Flask app (optional — actual scraping)
-
-The original Flask app is still here. It runs the same kind of free-site
-searches but tries to scrape them directly with cloudscraper, parses the HTML,
-and merges results across sources with source attribution and confidence
-scoring. Falls back to click-through URLs (same as the static dashboard) when
-a site blocks the request.
+Run the backend locally:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
 
-Open http://127.0.0.1:5000.
+Open http://127.0.0.1:5000 to use the Flask-served version, or open the
+static dashboard from `docs/` and point Settings → Backend URL at
+`http://localhost:5000`.
 
-| Env var               | Default | Notes                                                  |
-| --------------------- | ------- | ------------------------------------------------------ |
-| `SKIPTRACE_PROVIDER`  | `live`  | Set to `mock` for offline test mode.                   |
-| `SKIPTRACE_SOURCES`   | (all)   | Comma-list, e.g. `truepeoplesearch,thatsthem`.         |
+| Env var                       | Default | Notes                                                          |
+| ----------------------------- | ------- | -------------------------------------------------------------- |
+| `SKIPTRACE_PROVIDER`          | `live`  | Set to `mock` for offline test mode.                           |
+| `SKIPTRACE_SOURCES`           | (all)   | Comma-list, e.g. `truepeoplesearch,thatsthem`.                 |
+| `SKIPTRACE_ALLOWED_ORIGINS`   | github.io + localhost | Extra origins allowed via CORS.                       |
+| `SKIPTRACE_ALLOW_ALL_ORIGINS` | `0`     | Set to `1` to allow any origin (dev only).                     |
+| `PORT`                        | `5000`  | Server port (Render sets this automatically).                  |
 
-See `app.py`, `providers.py`, `scrapers/`, `enrichers.py` for details.
+## Architecture
+
+```
+docs/                  Static dashboard (GitHub Pages)
+  index.html           UI shell, settings modal
+  app.js               Backend client + links-only fallback
+  styles.css
+
+app.py                 Flask: routes, history (SQLite), CORS, /healthz
+providers.py           lookup() — runs scrapers concurrently, merges, enriches
+enrichers.py           libphonenumber + US Census Geocoder (no API keys)
+scrapers/
+  base.py              HTTP session (cloudscraper), rate limit, cache, block detection
+  truepeoplesearch.py
+  fastpeoplesearch.py
+  thatsthem.py
+  usphonebook.py
+
+render.yaml            Render Blueprint (one-click deploy)
+Procfile               Heroku-style start command
+.github/workflows/
+  pages.yml            Deploys docs/ to GitHub Pages
+```
 
 ## Compliance
 
 Skip-trace data is regulated. Confirm your use case is permissible under
-FCRA, GLBA, DPPA, and TCPA before contacting anyone returned by either tool.
-Each site's Terms of Service prohibits automated access — keep volume low if
-you use the local Flask scraper.
+**FCRA, GLBA, DPPA, and TCPA** before contacting anyone returned. Each free
+site's ToS prohibits scraping — keep volume low, don't run multiple workers
+in parallel, and respect the per-domain rate limits (6–8 s) baked into the
+scrapers.
