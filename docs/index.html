@@ -18,17 +18,21 @@
       <a href="#batch">Batch</a>
       <a href="#history">History</a>
       <a href="#" id="export-link">Export CSV</a>
+      <a href="#" id="settings-link">⚙ Settings</a>
     </nav>
   </header>
+
+  <div id="backend-banner" class="banner" hidden></div>
 
   <main>
     <section id="search" class="grid">
       <article class="card">
         <h2>Single lookup</h2>
-        <p class="muted">
-          Enter what you know. We open every free skip-trace site pre-filled in
-          one click, plus enrich phone &amp; address with libphonenumber and the
-          US Census Geocoder.
+        <p class="muted" id="mode-blurb">
+          Enter what you know.
+          <span id="mode-label-wrap"><strong id="mode-label">Links-only mode</strong> —
+          configure a backend in <a href="#" id="settings-inline">Settings</a> to
+          pull real phone numbers and relatives inline.</span>
         </p>
         <form id="single-form" class="form" autocomplete="off">
           <div class="row">
@@ -43,7 +47,7 @@
           </div>
           <label>Email<input name="email" type="email" /></label>
           <div class="actions">
-            <button type="submit">Generate links &amp; enrich</button>
+            <button type="submit" id="submit-btn">Search</button>
             <button type="button" id="open-all" class="ghost">Open all in tabs</button>
             <button type="reset" class="ghost">Reset</button>
           </div>
@@ -56,7 +60,6 @@
         <p class="muted">
           CSV with a header row. Recognized columns:
           <code>name, address, city, state, zip, phone, email</code>.
-          We add a column of pre-filled search URLs per site.
         </p>
         <form id="batch-form" class="form">
           <input id="batch-file" type="file" name="file" accept=".csv,text/csv" required />
@@ -80,7 +83,7 @@
         <table id="history-table">
           <thead>
             <tr>
-              <th>When</th><th>Query</th><th>Phone enrichment</th><th>Address</th><th></th>
+              <th>When</th><th>Query</th><th>Top phone</th><th>Address</th><th></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -89,10 +92,32 @@
     </section>
   </main>
 
+  <dialog id="settings-modal" class="modal">
+    <form method="dialog" id="settings-form">
+      <h2>Settings</h2>
+      <p class="muted">
+        Set your <strong>backend URL</strong> (the public URL of the Flask
+        scraper deployed to Render, Fly.io, or similar) to pull real phone
+        numbers, addresses, and relatives inline. Leave blank to stay in
+        links-only mode.
+      </p>
+      <label>Backend URL
+        <input name="backendUrl" placeholder="https://your-app.onrender.com" autocomplete="off" />
+      </label>
+      <div id="backend-status" class="muted small"></div>
+      <div class="actions">
+        <button type="button" id="settings-test" class="ghost">Test connection</button>
+        <button type="button" id="settings-save">Save</button>
+        <button type="button" id="settings-clear" class="danger">Clear</button>
+        <button type="button" id="settings-cancel" class="ghost">Close</button>
+      </div>
+    </form>
+  </dialog>
+
   <footer>
     <small>
-      Static dashboard, no backend. Searches save to your browser's localStorage.
       Comply with FCRA, GLBA, DPPA, and TCPA before contacting anyone returned.
+      Backend setup: see the README.
     </small>
   </footer>
 
